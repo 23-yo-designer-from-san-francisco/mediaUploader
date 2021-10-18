@@ -1,0 +1,8 @@
+github.com/dhowden/tag v0.0.0-20201120070457-d52dcb253c63 h1:/u5RVRk3Nh7Zw1QQnPtUH5kzcc8JmSSRpHSlGU/zGTE=
+github.com/dhowden/tag v0.0.0-20201120070457-d52dcb253c63/go.mod h1:SniNVYuaD1jmdEEvi+7ywb1QFR7agjeTdGKyFb0p7Rw=
+github.com/joe-xu/mp4parser v0.0.0-20170716170237-cae6f0ddfc8a h1:bPtxQ2VCGFkn3tTcul8cRd6YRHH9PC1lN6PIjpP8VoY=
+github.com/joe-xu/mp4parser v0.0.0-20170716170237-cae6f0ddfc8a/go.mod h1:aNPqySC5Q0cRJr0t7fWwNSvzR5R6xCYm1EeUA9JeqgM=
+github.com/lib/pq v1.10.3 h1:v9QZf2Sn6AmjXtQeFpdoq/eaNtYP6IN+7lcrygsIAtg=
+github.com/lib/pq v1.10.3/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
+github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
+github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
