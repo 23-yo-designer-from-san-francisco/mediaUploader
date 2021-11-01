@@ -76,16 +76,13 @@ func copyMusicFile(src string, dest string) {
 
 func findFiles(root, ext string) []string {
 	var a []string
-	err := filepath.WalkDir(root, func(s string, d fs.DirEntry, e error) error {
+	filepath.WalkDir(root, func(s string, d fs.DirEntry, e error) error {
 		if e != nil { return e }
 		if filepath.Ext(d.Name()) == ext {
 			a = append(a, s)
 		}
 		return nil
 	})
-	if err != nil {
-		return nil
-	}
 	log.Println(len(a))
 	return a
 }
@@ -119,18 +116,12 @@ func handleFile(db *sql.DB, filename string) {
 	}
 
 	if artistID == 0 {
-		err := db.QueryRow(`INSERT INTO artists(name) VALUES($1) RETURNING id`, m.Artist()).Scan(&artistID)
-		if err != nil {
-			return
-		}
+		db.QueryRow(`INSERT INTO artists(name) VALUES($1) RETURNING id`, m.Artist()).Scan(&artistID)
 	}
 
 	// Нашли исполнителя, теперь проверяем наличие альбома у него
 	var albumID int64
-	err := db.QueryRow(`SELECT id FROM albums WHERE title=$1 AND artist=$2`, m.Album(), artistID).Scan(&albumID)
-	if err != nil {
-		return
-	}
+	db.QueryRow(`SELECT id FROM albums WHERE title=$1 AND artist=$2`, m.Album(), artistID).Scan(&albumID)
 	if albumID == 0 {
 		reader := bytes.NewReader(m.Picture().Data)
 		src, err := imgconv.Decode(reader)
@@ -142,20 +133,14 @@ func handleFile(db *sql.DB, filename string) {
 		// Создаем изображения webp
 		createWebpImages(src, artworkFilename)
 
-		err = db.QueryRow(`INSERT INTO albums(title, year, artist, artwork, track_count)
-		 								VALUES($1, $2, $3, $4, $5) RETURNING id`, m.Album(), m.Year(), artistID, artworkFilename, totalTracks,
+		db.QueryRow(`INSERT INTO albums(title, year, artist, artwork, track_count)
+ 								VALUES($1, $2, $3, $4, $5) RETURNING id`, m.Album(), m.Year(), artistID, artworkFilename, totalTracks,
 		).Scan(&albumID)
-		if err != nil {
-			return
-		}
 	}
 
 	// Нашли альбом, проверяем наличие трека в нем
 	var trackID int64
-	err = db.QueryRow(`SELECT id FROM tracks WHERE artist=$1 AND album=$2 AND title=$3`, artistID, albumID, m.Title()).Scan(&trackID)
-	if err != nil {
-		return
-	}
+	db.QueryRow(`SELECT id FROM tracks WHERE artist=$1 AND album=$2 AND title=$3`, artistID, albumID, m.Title()).Scan(&trackID)
 	if trackID == 0 {
 		trackFile := uuid.NewV4().String() + filepath.Ext(filename)
 		genre := findGenre(db, m.Genre())
@@ -173,6 +158,18 @@ func handleFile(db *sql.DB, filename string) {
 }
 
 func main() {
+	cmd := exec.Command("/bin/sh", "-c", "rm -rf ./tracks/*")
+	err := cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+	cmd = exec.Command("/bin/sh", "-c", "rm -rf ./artworks/*")
+	err = cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Cleared all data from /tracks and /artworks")
+
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBHOST"), os.Getenv("DBPORT"),
 		os.Getenv("DBNAME"))
@@ -182,10 +179,21 @@ func main() {
 	}
 
 	sourceD := os.Args[1]
-	log.Println(sourceD)
-
 	for _, file := range findFiles(sourceD, Extension) {
 		handleFile(db, file)
 	}
+
+	cmd = exec.Command("rsync", "-a", "artworks/", "root@lostpointer.site:/root/artworks")
+	err = cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Artworks were sent to server")
+	cmd = exec.Command("rsync", "-a", "tracks/", "root@lostpointer.site:/root/tracks")
+	err = cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Artworks were sent to server")
 }
 
