@@ -21,9 +21,13 @@ import (
 )
 
 const (
-	MusicStorage = "./tracks/"
-	ArtworkStorage = "./artworks/"
+	MusicStorage = "/Volumes/ram/tracks/"
+	ArtworkStorage = "/Volumes/ram/artworks/"
 	Extension = ".m4a"
+	Username = "ubuntu"
+	Host = "lostpointer.site"
+	ArtworksRemoteDir = "/home/ubuntu/artworks"
+	TracksRemoteDir = "/home/ubuntu/tracks"
 )
 
 var imageSizes = []int{96, 128, 192, 256, 384, 512}
@@ -174,6 +178,12 @@ func main() {
 		os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBHOST"), os.Getenv("DBPORT"),
 		os.Getenv("DBNAME"))
 	db, err := sql.Open("postgres", connStr)
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(db)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -183,17 +193,19 @@ func main() {
 		handleFile(db, file)
 	}
 
-	cmd = exec.Command("rsync", "-a", "artworks/", "root@lostpointer.site:/root/artworks")
+	cmd = exec.Command("rsync", "-a", "artworks/", fmt.Sprintf(
+		"%s@%s:%s", Username, Host, ArtworksRemoteDir))
 	err = cmd.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("Artworks were sent to server")
-	cmd = exec.Command("rsync", "-a", "tracks/", "root@lostpointer.site:/root/tracks")
+	cmd = exec.Command("rsync", "-a", "tracks/", fmt.Sprintf(
+		"%s@%s%s", Username, Host, TracksRemoteDir))
 	err = cmd.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Artworks were sent to server")
+	log.Println("Tracks were sent to server")
 }
 
